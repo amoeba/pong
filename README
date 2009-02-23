@@ -1,0 +1,6 @@
+Pong in C++ using SDL
+Tested using Mingw32
+
+INSTALL
+
+`make`
