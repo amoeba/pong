@@ -88,7 +88,7 @@ bool init()
 		return false;
 	}
 
-	SDL_WM_SetCaption( "SDL App", NULL );
+	SDL_WM_SetCaption( "Pong", NULL );
 
 	return true;
 }
