@@ -29,9 +29,24 @@ SDL_Surface *background = NULL;
 SDL_Surface *paddle_surface = NULL;
 SDL_Surface *fps_text = NULL;
 SDL_Surface *ball_surface = NULL;
+SDL_Surface *score_player_surface = NULL;
+SDL_Surface *score_computer_surface = NULL;
 
 TTF_Font *font = NULL;
 SDL_Color text_color = {0, 0, 0};
+
+int score_player;
+int score_computer;
+
+
+template <class T>
+inline std::string to_string (const T& t)
+{
+  std::stringstream ss;
+  ss << t;
+  return ss.str();
+}
+
 
 class Paddle
 {
@@ -179,6 +194,8 @@ void clean_up()
   SDL_FreeSurface(ball_surface);
   SDL_FreeSurface(paddle_surface);
   SDL_FreeSurface(fps_text);
+  SDL_FreeSurface(score_player_surface);
+  SDL_FreeSurface(score_computer_surface);
 
   TTF_CloseFont(font);
 
@@ -189,7 +206,7 @@ void clean_up()
 int main (int argc, char* args[])
 {
   bool running = true;
-  std::stringstream caption;
+
   float frames = 0.0f;
   float fps = 0.0f;
   float ticks = 0.0f;
@@ -242,23 +259,17 @@ int main (int argc, char* args[])
       }
     }
 
-    std::stringstream caption;
+    //ticks = SDL_GetTicks();
+    //fps = (ticks != 0) ? (frames / (ticks/1000.0f)) : 0.0f;
 
-    ticks = SDL_GetTicks();
-    fps = (ticks != 0) ? (frames / (ticks/1000.0f)) : 0.0f;
-    caption << "FPS: " << fps;
-
-    fps_text = TTF_RenderText_Blended(font, caption.str().c_str(), text_color);
-
-    apply_surface(0, 0, background, screen);
-
+    //fps_text = TTF_RenderText_Blended(font, to_string(fps).c_str(), text_color);
 
     // Update the Paddle
 
     if((paddle->y > 0 && paddle->velocity != 1) ||
       (paddle->y < SCREEN_HEIGHT - paddle_surface->h && paddle->velocity != -1))
     {
-    paddle->y += 3 * paddle->velocity;
+      paddle->y += 3 * paddle->velocity;
     }
 
 
@@ -290,11 +301,19 @@ int main (int argc, char* args[])
     }
 
 
+    // Update the score text
+       
+    //score_player_surface = TTF_RenderText_Blended(font, to_string(score_player).c_str(), text_color);
+    //score_computer_surface = TTF_RenderText_Blended(font, to_string(score_computer).c_str(), text_color);
+
     // Fill the screen up
 
+    apply_surface(0, 0, background, screen);
     apply_surface(paddle->x, paddle->y, paddle_surface, screen);
     apply_surface(ball->x, ball->y, ball_surface, screen);
-    apply_surface(0, 0, fps_text, screen);
+    //apply_surface(0, SCREEN_HEIGHT - fps_text->h, fps_text, screen);
+    //apply_surface(0, 0, score_player_surface, screen);
+    //apply_surface(SCREEN_WIDTH - score_computer_surface->w, 0, score_computer_surface, screen);
 
     if(SDL_Flip(screen) == -1)
     {
