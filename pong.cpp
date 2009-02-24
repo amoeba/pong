@@ -1,4 +1,4 @@
-﻿/*  pong.cpp
+/*  pong.cpp
     Pong in C++ using SDL
     
     Written by Bryce Mecum [http://github.com/amoeba]
@@ -13,6 +13,8 @@
 #include <string>
 #include <sstream>
 #include <stdio.h>
+#include <vector>
+#include <cmath>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -34,17 +36,63 @@ SDL_Color text_color = {0, 0, 0};
 class Paddle
 {
 public:
-  int x, y;
+  int x, y, w, h;
   int velocity;
-  Paddle(int _x, int _y) { x = _x; y = _y; velocity = 0; }
+  Paddle(int _x, int _y, int _w, int _h) { x = _x; y = _y; w = _w, h = _h; velocity = 0; }
 };
 
 class Ball
 {
 public:
-  int x, y, velx, vely;
-  Ball(int _x, int _y, int _velx, int _vely) { x = _x; y = _y; velx = _velx; vely = _vely;}
+  int x, y, w, h, velx, vely;
+  Ball(int _x, int _y, int _w, int _h, int _velx, int _vely) { x = _x; y = _y; w = _w; h = _h; velx = _velx; vely = _vely;}
 };
+
+
+bool collide(Paddle *paddle, Ball *ball)
+{
+  if(ball->velx != -1)
+  {
+    return false;
+  }
+  
+  int px, py, pw, ph;
+  int bx, by, bw, bh;
+
+  px = paddle->x;
+  py = paddle->y;
+  pw = paddle->w;
+  ph = paddle->h;
+  
+  bx = ball->x;
+  by = ball->y;
+  bw = ball->w;
+  bh = ball->h;
+
+  int r = bw/2;
+  
+  // Check right side collision
+  if((by + r) >= py &&
+    (by + r) <= (py + ph) &&
+    bx <= (px + pw))
+  {
+    ball->velx *= -1;
+  }
+  
+  // Check top/bottom collision
+  if((bx + r) >= px &&
+    (bx + r) <= (px + pw) &&
+    (by + bh) >= py &&
+    by <= (py + ph))
+  {
+    ball->vely *= -1;
+  }
+    
+  
+    
+  
+  return false;
+}
 
 SDL_Surface *load_image (std::string filename)
 {
@@ -156,8 +204,8 @@ int main (int argc, char* args[])
     return 1;
   }
 
-  Paddle* paddle = new Paddle(paddle_surface->w, SCREEN_HEIGHT/2);
-  Ball* ball = new Ball(SCREEN_WIDTH / 2 - ball_surface->w / 2, SCREEN_HEIGHT / 2 - ball_surface->h / 2, -1, 1);
+  Paddle* paddle = new Paddle(0, SCREEN_HEIGHT/2, paddle_surface->w, paddle_surface->h);
+  Ball* ball = new Ball(SCREEN_WIDTH / 2 - ball_surface->w / 2, SCREEN_HEIGHT / 2 - ball_surface->h / 2, ball_surface->w, ball_surface->h, -1, 1);
 
   while(running)
   {
@@ -216,27 +264,30 @@ int main (int argc, char* args[])
 
     // Update the Ball
 
-    if(ball->x <= 0 || ball->x + ball_surface->h >= SCREEN_WIDTH)
+    if(ball->x <= 0)
     {
-    ball->velx *= -1;
+      ball->x = SCREEN_WIDTH / 2 - ball->w;
+      ball->y = SCREEN_HEIGHT / 2 - ball->h;
+      ball->velx = -1;
+      ball->vely = -1;
     }
-
-    if(ball->y <= 0 || ball->y + ball_surface->w >= SCREEN_HEIGHT)
+    else
     {
-    ball->vely *= -1;
+      if(ball->y <= 0 || ball->y + ball_surface->w >= SCREEN_HEIGHT)
+      {
+        ball->vely *= -1;
+      }
+  
+      if(ball->x + ball_surface->h >= SCREEN_WIDTH)
+      {
+        ball->velx *= -1;
+      }
+      
+      collide(paddle, ball);
+  
+      ball->x += 3 * ball->velx;
+      ball->y += 3 * ball->vely;
     }
-
-    // To the right
-    if(ball->x <= paddle->x + paddle_surface->w &&
-      ball->y >= paddle->y &&
-      ball->y + ball_surface->h <= paddle->y + paddle_surface->h)
-    {
-    ball->velx *= -1;
-    }
-
-
-    ball->x += 3 * ball->velx;
-    ball->y += 3 * ball->vely;
 
 
     // Fill the screen up
