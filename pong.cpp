@@ -46,6 +46,9 @@ class Ball
 public:
   int x, y, w, h, velx, vely;
   Ball(int _x, int _y, int _w, int _h, int _velx, int _vely) { x = _x; y = _y; w = _w; h = _h; velx = _velx; vely = _vely;}
+  int cx() { return (x + w/2); }
+  int cy() { return (y + h/2); }
+  int r() { return (w/2); }
 };
 
 
@@ -182,9 +185,6 @@ void clean_up()
   TTF_Quit();
   SDL_Quit();
 }
-
-
-
 
 int main (int argc, char* args[])
 {
