@@ -38,7 +38,6 @@ SDL_Color text_color = {0, 0, 0};
 int score_player;
 int score_computer;
 
-
 template <class T>
 inline std::string to_string (const T& t)
 {
@@ -47,31 +46,93 @@ inline std::string to_string (const T& t)
   return ss.str();
 }
 
-
 class Paddle
 {
 public:
-  int x, y, w, h;
-  int velocity;
-  Paddle(int _x, int _y, int _w, int _h) { x = _x; y = _y; w = _w, h = _h; velocity = 0; }
-};
+  int x, y, w, h, vy;
+  
+  Paddle(int, int, int, int); 
+  void update();
+} *paddle;
+
+Paddle::Paddle(int _x, int _y, int _w, int _h)
+{
+  x = _x;
+  y = _y;
+  w = _w;
+  h = _h;
+  vy = 0;
+}
+
+void Paddle::update()
+{
+  if((this->y > 0 && this->vy != 1) ||
+    (this->y < SCREEN_HEIGHT - paddle_surface->h && this->vy != -1))
+  {
+    this->y += 3 * this->vy;
+  }
+}
+
 
 class Ball
 {
 public:
-  int x, y, w, h, velx, vely;
-  Ball(int _x, int _y, int _w, int _h, int _velx, int _vely) { x = _x; y = _y; w = _w; h = _h; velx = _velx; vely = _vely;}
-  int cx() { return (x + w/2); }
-  int cy() { return (y + h/2); }
-  int r() { return (w/2); }
-};
+  int x, y, w, h, vx, vy;
+  
+  Ball(int, int, int, int, int, int);
+  void update();
+  
+  void collide_with(Paddle*);
+  
+  int cx() { return (this->x + (this->w)/2); }
+  int cy() { return (this->y + (this->h)/2); }
+  int r() { return ((this->w)/2); }
+} *ball;
 
-
-bool collide(Paddle *paddle, Ball *ball)
+Ball::Ball(int _x, int _y, int _w, int _h, int _vx, int _vy)
 {
-  if(ball->velx != -1)
+  this->x = _x;
+  this->y = _y;
+  this->w = _w;
+  this->h = _h;
+  this->vx = _vx;
+  this->vx = _vy;
+}
+
+void Ball::update()
+{
+  if(this->x <= 0)
+    {
+      this->x = SCREEN_WIDTH / 2 - this->w;
+      this->y = SCREEN_HEIGHT / 2 - this->h;
+      this->vx = -1;
+      this->vy = -1;
+    }
+    else
+    {
+      if(this->y <= 0 || this->y + ball_surface->w >= SCREEN_HEIGHT)
+      {
+        this->vy *= -1;
+      }
+
+      if(this->x + ball_surface->h >= SCREEN_WIDTH)
+      {
+        this->vx *= -1;
+      }
+
+      this->collide_with(paddle);
+
+      this->x += 3 * this->vx;
+      this->y += 3 * this->vy;
+    }
+}
+
+
+void Ball::collide_with(Paddle *paddle)
+{
+  if(this->vx != -1)
   {
-    return false;
+    return;
   }
   
   int px, py, pw, ph;
@@ -82,10 +143,10 @@ bool collide(Paddle *paddle, Ball *ball)
   pw = paddle->w;
   ph = paddle->h;
   
-  bx = ball->x;
-  by = ball->y;
-  bw = ball->w;
-  bh = ball->h;
+  bx = this->x;
+  by = this->y;
+  bw = this->w;
+  bh = this->h;
 
   int r = bw/2;
   
@@ -94,7 +155,7 @@ bool collide(Paddle *paddle, Ball *ball)
     (by + r) <= (py + ph) &&
     bx <= (px + pw))
   {
-    ball->velx *= -1;
+    this->vx *= -1;
   }
   
   // Check top/bottom collision
@@ -103,13 +164,13 @@ bool collide(Paddle *paddle, Ball *ball)
     (by + bh) >= py &&
     by <= (py + ph))
   {
-    ball->vely *= -1;
+    this->vy *= -1;
   }
     
   
     
   
-  return false;
+  return;
 }
 
 SDL_Surface *load_image (std::string filename)
@@ -221,8 +282,8 @@ int main (int argc, char* args[])
     return 1;
   }
 
-  Paddle* paddle = new Paddle(0, SCREEN_HEIGHT/2, paddle_surface->w, paddle_surface->h);
-  Ball* ball = new Ball(SCREEN_WIDTH / 2 - ball_surface->w / 2, SCREEN_HEIGHT / 2 - ball_surface->h / 2, ball_surface->w, ball_surface->h, -1, 1);
+  paddle = new Paddle(0, SCREEN_HEIGHT/2, paddle_surface->w, paddle_surface->h);
+  ball = new Ball(SCREEN_WIDTH / 2 - ball_surface->w / 2, SCREEN_HEIGHT / 2 - ball_surface->h / 2, ball_surface->w, ball_surface->h, -1, 1);
 
   while(running)
   {
@@ -239,22 +300,22 @@ int main (int argc, char* args[])
       {
       if(event.key.keysym.sym == SDLK_UP)
       {
-        paddle->velocity = -1;
+        paddle->vy = -1;
       }
       else if(event.key.keysym.sym == SDLK_DOWN)
       {
-        paddle->velocity = 1;
+        paddle->vy = 1;
       }
       }
       else if(event.type == SDL_KEYUP)
       {
       if(event.key.keysym.sym == SDLK_UP)
       {
-        paddle->velocity = 0;
+        paddle->vy = 0;
       }
       else if(event.key.keysym.sym == SDLK_DOWN)
       {
-        paddle->velocity = 0;
+        paddle->vy = 0;
       }
       }
     }
@@ -264,43 +325,10 @@ int main (int argc, char* args[])
 
     //fps_text = TTF_RenderText_Blended(font, to_string(fps).c_str(), text_color);
 
-    // Update the Paddle
-
-    if((paddle->y > 0 && paddle->velocity != 1) ||
-      (paddle->y < SCREEN_HEIGHT - paddle_surface->h && paddle->velocity != -1))
-    {
-      paddle->y += 3 * paddle->velocity;
-    }
-
-
-    // Update the Ball
-
-    if(ball->x <= 0)
-    {
-      ball->x = SCREEN_WIDTH / 2 - ball->w;
-      ball->y = SCREEN_HEIGHT / 2 - ball->h;
-      ball->velx = -1;
-      ball->vely = -1;
-    }
-    else
-    {
-      if(ball->y <= 0 || ball->y + ball_surface->w >= SCREEN_HEIGHT)
-      {
-        ball->vely *= -1;
-      }
-  
-      if(ball->x + ball_surface->h >= SCREEN_WIDTH)
-      {
-        ball->velx *= -1;
-      }
-      
-      collide(paddle, ball);
-  
-      ball->x += 3 * ball->velx;
-      ball->y += 3 * ball->vely;
-    }
-
-
+    
+    paddle->update();
+    ball->update();
+    
     // Update the score text
        
     //score_player_surface = TTF_RenderText_Blended(font, to_string(score_player).c_str(), text_color);
