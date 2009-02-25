@@ -20,7 +20,7 @@ const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int SCREEN_BPP = 32;
 
-const int FRAMES_PER_SECOND = 60;
+const int FRAMES_PER_SECOND = 30;
 
 SDL_Event event;
 
@@ -69,7 +69,7 @@ void Paddle::update()
   if((this->y > 0 && this->vy != 1) ||
     (this->y < SCREEN_HEIGHT - paddle_surface->h && this->vy != -1))
   {
-    this->y += 3 * this->vy;
+    this->y += 10 * this->vy;
   }
 }
 
@@ -270,8 +270,13 @@ int main (int argc, char* args[])
 
   float frames = 0.0f;
   float fps = 0.0f;
-  float ticks = 0.0f;
-
+  
+  float before_frame_time = 0.0f;
+  float after_frame_time = 0.0f;
+  float delta_time = 0.0f;
+  float elapsed_time = 0.0f;
+  float initial_time = (float)SDL_GetTicks();
+  
   if(init() == false )
   {
     return 1;
@@ -287,8 +292,6 @@ int main (int argc, char* args[])
 
   while(running)
   {
-    frames++;
-
     while(SDL_PollEvent(&event))
     {
       if(event.type == SDL_QUIT)
@@ -320,13 +323,33 @@ int main (int argc, char* args[])
       }
     }
 
-    ticks = SDL_GetTicks();
-    fps = (ticks != 0) ? (frames / (ticks/1000.0f)) : 0.0f;
+    
+    // Calculate FPS
+    
+    /*tnew = SDL_GetTicks();
+    dt = tnew - told;
+    told = tnew;
+    
+    
+    
+    //fps = (dt != 0) ? (1/(float)(dt/1000.0)) : 0.0f;
+    fps = (tnew != 0) ? (frames/((tnew-tstart)/1000)) : 0;
+    
+    */
+    
+    before_frame_time = after_frame_time;
+    after_frame_time = (float)SDL_GetTicks();
+    delta_time = after_frame_time - before_frame_time;
+    elapsed_time = SDL_GetTicks() - initial_time;
+    fps = frames / (elapsed_time/1000);
+    
     fps_text = TTF_RenderText_Blended(font, to_string(fps).c_str(), text_color);
 
+
+    // Update screen objects
     
     paddle->update();
-    ball->update();
+    //ball->update();
     
     // Update the score text
        
@@ -342,14 +365,24 @@ int main (int argc, char* args[])
     apply_surface(0, 0, score_player_surface, screen);
     apply_surface(SCREEN_WIDTH - score_computer_surface->w, 0, score_computer_surface, screen);
 
+
+    SDL_FreeSurface(fps_text);
+    SDL_FreeSurface(score_player_surface);
+    SDL_FreeSurface(score_computer_surface);
+    
     if(SDL_Flip(screen) == -1)
     {
       return 1;
     }
+
+      
+      
+    frames++;
     
-    SDL_FreeSurface(fps_text);
-    SDL_FreeSurface(score_player_surface);
-    SDL_FreeSurface(score_computer_surface);
+    if((SDL_GetTicks() - before_frame_time) < (1000.0 / FRAMES_PER_SECOND))
+    {
+      SDL_Delay((Uint32)((1000.0 / FRAMES_PER_SECOND) - (SDL_GetTicks() - before_frame_time)));
+    }
   }
 
   clean_up();
