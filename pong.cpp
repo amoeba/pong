@@ -320,10 +320,9 @@ int main (int argc, char* args[])
       }
     }
 
-    //ticks = SDL_GetTicks();
-    //fps = (ticks != 0) ? (frames / (ticks/1000.0f)) : 0.0f;
-
-    //fps_text = TTF_RenderText_Blended(font, to_string(fps).c_str(), text_color);
+    ticks = SDL_GetTicks();
+    fps = (ticks != 0) ? (frames / (ticks/1000.0f)) : 0.0f;
+    fps_text = TTF_RenderText_Blended(font, to_string(fps).c_str(), text_color);
 
     
     paddle->update();
@@ -331,22 +330,26 @@ int main (int argc, char* args[])
     
     // Update the score text
        
-    //score_player_surface = TTF_RenderText_Blended(font, to_string(score_player).c_str(), text_color);
-    //score_computer_surface = TTF_RenderText_Blended(font, to_string(score_computer).c_str(), text_color);
+    score_player_surface = TTF_RenderText_Blended(font, to_string(score_player).c_str(), text_color);
+    score_computer_surface = TTF_RenderText_Blended(font, to_string(score_computer).c_str(), text_color);
 
     // Fill the screen up
 
     apply_surface(0, 0, background, screen);
     apply_surface(paddle->x, paddle->y, paddle_surface, screen);
     apply_surface(ball->x, ball->y, ball_surface, screen);
-    //apply_surface(0, SCREEN_HEIGHT - fps_text->h, fps_text, screen);
-    //apply_surface(0, 0, score_player_surface, screen);
-    //apply_surface(SCREEN_WIDTH - score_computer_surface->w, 0, score_computer_surface, screen);
+    apply_surface(0, SCREEN_HEIGHT - fps_text->h, fps_text, screen);
+    apply_surface(0, 0, score_player_surface, screen);
+    apply_surface(SCREEN_WIDTH - score_computer_surface->w, 0, score_computer_surface, screen);
 
     if(SDL_Flip(screen) == -1)
     {
       return 1;
     }
+    
+    SDL_FreeSurface(fps_text);
+    SDL_FreeSurface(score_player_surface);
+    SDL_FreeSurface(score_computer_surface);
   }
 
   clean_up();
